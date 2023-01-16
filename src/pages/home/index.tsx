@@ -7,30 +7,16 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as zod from 'zod'
 // Aqui estamos importando os componentes de estilo do arquivo styles.ts que estilizam as tags que usamos neste componente.
 import {
-  CountdownContainer,
-  FormContainer,
   HomeContainer,
-  MinutesAmountInput,
-  Separator,
   StartCountdownButton,
   StopCountdownButton,
-  TaskInput,
 } from './styles'
 import { useEffect, useState } from 'react'
 import { differenceInSeconds } from 'date-fns'
+import { Countdown } from './components/Countdown'
+import { NewCycleForm } from './components/NewCycleForm'
 
 // A const abaixo cria um objeto de validacao com o zod para validar os campos dos formulário.
-
-const newCycleFormValidationSchema = zod.object({
-  task: zod.string().min(1, 'informe a tarefa !'),
-  minutesAmount: zod
-    .number()
-    .min(1, 'O ciclo precisa ser de no mínimo 5 minutos.')
-    .max(60, 'O ciclo deve ser de no máximo 60 minutos.'),
-})
-
-// Este tipo abaixo usa o objeto acima e extrai dele os tipos de cada campo, para que sejam usados como parametros no zodResolver abaixo.
-type NewCycleFormData = zod.infer<typeof newCycleFormValidationSchema>
 
 // Esta interface do typeScript define o tipo dos dados a serem usados no estado criado abaixo "cycles"
 interface Cycle {
@@ -48,52 +34,9 @@ export function Home() {
   // este estado serve para guardar qual dos ciclos do estado anterior ta ativo, pois esta informação sera usada para demonstrar em tela o estado dos ciclos
   const [activeCycleId, setactiveCycleId] = useState<string | null>(null)
 
-  const [amountSecondPassed, setamountSecondPassed] = useState(0)
-
-  // A const abaixo usa o useForm passando como parâmetro para ela um resolver que usa o zodResolver para validar os campos. O tipo a ser usado pelo useForme é o NewCycleFormData, fazendo com o que o resolver já saiba o tipo de dados que esta validando. ex: abaixo estou validando os campos task e minutesAmount e ao passa o tipo NewCycleFormData o zod já sabe que task é string e minutesamount é número.
-  const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
-    resolver: zodResolver(newCycleFormValidationSchema),
-    defaultValues: {
-      task: '',
-      minutesAmount: 0,
-    },
-  })
   // Esta const procura no conjunto de ciclos qual tem o ID  igual ao ciclo ativo, definido pelo estado "activeCycleId", entao considera este como ativo e então aplicar alguma operação neste determinado elemento do conjunto de ciclos.
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
-  // o hook do react abaixo, useEffect, funciona para que possamos a cada alteracao do status do activeCycle executar alguma outra ação. Neste caso estamos determinando que se tiver um ciclo ativo a cada 1s a função setInterval seja executada e dentro dela seja calculado a diferenca em segundo ente o momento atual e o horario que o ciclo começou e o o resultado seja passado pro setamountSecondPassed para dizer quantos segundos se passaram desde o início do ciclo, para que por ultimo este valor seja usado para saber quantos segundos se passou desde a criacao do ciclo e isso seja diminuido na const currentSeconds;
 
-  // A const abaixo pegam o valor inserido na input minutesAmount e converte em segundos, para ficar mais facil de manipular
-  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0
-  useEffect(() => {
-    let interval: number
-    if (activeCycle) {
-      interval = setInterval(() => {
-        const secondsDifference = differenceInSeconds(
-          new Date(),
-          activeCycle.startDate,
-        )
-        // nesta parte estamos vendo se a variável acima, secondsDifference, é maior ou igual ao total de segundo que foi estipulado pro ciclo, caso seja percorremos o estado cycle e adicionamos ao ciclo ativo o campo finishedDate.
-        if (secondsDifference >= totalSeconds) {
-          setCycles((state) =>
-            state.map((cycle) => {
-              if (cycle.id === activeCycleId) {
-                return { ...cycle, finishedDate: new Date() }
-              } else {
-                return cycle
-              }
-            }),
-          )
-          setamountSecondPassed(totalSeconds)
-          clearInterval(interval)
-        } else {
-          setamountSecondPassed(secondsDifference)
-        }
-      }, 1000)
-    }
-    return () => {
-      clearInterval(interval)
-    }
-  }, [activeCycle, totalSeconds, activeCycleId])
   // Esta função é para ser usada para gerenciar o que ocorre quando o usuário submete os dados do formulário. é chamada no onSubmit do form.
   function handleCreateNewCycle(data: NewCycleFormData) {
     // A const abaixo serve para que a cada clique de ciclo seja gerado um id, que no caso ta sendo utilizado pegando a data no exato momento do ciclo
@@ -159,51 +102,11 @@ export function Home() {
     <HomeContainer>
       {/* Abaixo ao fazer o submit do form está sendo chamada a função do React Hook Form que precisa de um parâmetro que é uma função, podendo tb receber outro parâmetro no caso de erro que tambem é uma função, mas neste caso não precisa tipas, pois a função apenas retorna um erro, não retorna dados.    */}
       <form
-        action=""
         // No onsubmit abaixo ta sendo usada uma função do useForm "handleSubmit" para lidar com as ações ao submeter o form
         onSubmit={handleSubmit(handleCreateNewCycle, handleCreateNewCycleError)}
       >
-        <FormContainer>
-          {/* o atributo htmlfor serve para você apontar qual elemento do formulário a label se refere */}
-          <label htmlFor="task">Vou trabalhar em:</label>
-          <TaskInput
-            list="task-suggestions"
-            placeholder="d2igite a tarefa a ser feita"
-            id="task"
-            {...register('task')}
-            disabled={!!activeCycle}
-          />
-
-          <datalist id="task-suggestions">
-            <option value="Projeto 1"></option>
-            <option value="Projeto 2"></option>
-            <option value="Projeto 3"></option>
-            <option value="Projeto 4"></option>
-          </datalist>
-
-          <label htmlFor="minutesAmount">durante</label>
-          <MinutesAmountInput
-            placeholder="0-60"
-            type="number"
-            id="minutesAmount"
-            step={5}
-            min={1}
-            max={60}
-            {...register('minutesAmount', { valueAsNumber: true })}
-            disabled={!!activeCycle}
-          />
-
-          <span>minutos.</span>
-        </FormContainer>
-
-        <CountdownContainer>
-          {/* aqui embaixo usamos o metodo de pegar apenas um elemento do caracter, pois uma string aceita iiso, semelhante ao pegarmos apenas um elemento de um array */}
-          <span>{minutes[0]}</span>
-          <span>{minutes[1]}</span>
-          <Separator>:</Separator>
-          <span>{seconds[0]}</span>
-          <span>{seconds[1]}</span>
-        </CountdownContainer>
+        <NewCycleForm />
+        <Countdown />
         {/* Aqui embaixo estamos vendo se há ou não um ciclo ativo e caso tenha estamos mudando ocultando o botão StartCountdownButton e mostrando o botão StopCountdownButton e neste caso ao clicarmos no botão estamos executando a função handleInterruptCycle */}
         {activeCycle ? (
           <StopCountdownButton onClick={handleInterruptCycle} type="button">
