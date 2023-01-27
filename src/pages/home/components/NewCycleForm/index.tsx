@@ -13,7 +13,7 @@ export function NewCycleForm() {
       <label htmlFor="task">Vou trabalhar em:</label>
       <TaskInput
         list="task-suggestions"
-        placeholder="d2igite a tarefa a ser feita"
+        placeholder="digite a tarefa a ser feita"
         id="task"
         {...register('task')}
         disabled={!!activeCycle}

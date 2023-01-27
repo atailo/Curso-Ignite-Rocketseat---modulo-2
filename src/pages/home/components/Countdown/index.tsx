@@ -7,8 +7,8 @@ export function Countdown() {
   const {
     activeCycle,
     activeCycleId,
-    markCurrentCycleAsFinished,
     amountSecondPassed,
+    markCurrentCycleAsFinished,
     setSecondPassed,
   } = useContext(CyclesContext)
 
@@ -18,6 +18,8 @@ export function Countdown() {
   // o hook do react abaixo, useEffect, funciona para que possamos a cada alteracao do status do activeCycle executar alguma outra ação. Neste caso estamos determinando que se tiver um ciclo ativo a cada 1s a função setInterval seja executada e dentro dela seja calculado a diferenca em segundo ente o momento atual e o horario que o ciclo começou e o o resultado seja passado pro setAmountSecondPassed para dizer quantos segundos se passaram desde o início do ciclo, para que por ultimo este valor seja usado para saber quantos segundos se passou desde a criacao do ciclo e isso seja diminuido na const currentSeconds;
 
   useEffect(() => {
+    console.log('a')
+
     let interval: number
     if (activeCycle) {
       interval = setInterval(() => {
@@ -57,10 +59,16 @@ export function Countdown() {
 
   // Este useEffect observa se tem ciclo ativo e entao caso tenha ele mudar o titulo da pagina e o favicon para mostrar o tempo que falta no ciclo no titulo da pagina.
   useEffect(() => {
+    console.log(activeCycle)
+
     if (activeCycle) {
       document.title = `${minutes}:${seconds}`
       const teste = document.getElementById('favicon')
       teste?.setAttribute('href', 'src/assets/alarm.png')
+    } else {
+      document.title = 'Ignite Timer'
+      const teste = document.getElementById('favicon')
+      teste?.setAttribute('href', 'src/assets/logo-ignite.svg')
     }
   }, [minutes, seconds, activeCycle])
 

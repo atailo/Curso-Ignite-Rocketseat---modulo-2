@@ -30,8 +30,8 @@ interface Cycle {
 interface CyclesContextType {
   activeCycle: Cycle | undefined
   activeCycleId: string | null
-  markCurrentCycleAsFinished: () => void
   amountSecondPassed: number
+  markCurrentCycleAsFinished: () => void
   setSecondPassed: (seconds: number) => void
 }
 
